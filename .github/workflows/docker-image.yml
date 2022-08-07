@@ -1,8 +1,8 @@
 
-
 name: "Tag Image on Commit"
-on:
+on: 
   push:
+
 
 jobs:
   build:
@@ -10,4 +10,31 @@ jobs:
     steps:
     - name: Checkout 
       uses: actions/checkout@v3
-    - run: docker-compose up       
+
+    - name: AWS Creds
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{AKIA5RHLXW4LBKGLJG2N}}
+        aws-secret-access-key: ${{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 }}
+        aws-region: us-west-2
+    
+    - name: Login to ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      
+   
+    - name: Build and tag image
+      id:  build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: whist-app
+      run: |
+        sha=$(git rev-parse --short "$GITHUB_SHA")
+        branch=${GITHUB_REF#refs/heads/}
+        name="my_app"
+        cd app/
+
+        docker image build -t $ECR_REGISTRY/$ECR_REPOSITORY:$name-$branch-$sha -t $ECR_REGISTRY/$ECR_REPOSITORY:lastest .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$name-$branch-$sha
+        $ECR_REGISTRY/$ECR_REPOSITORY:lastest
+   
